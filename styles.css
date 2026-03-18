@@ -1,86 +1,172 @@
-:root {
-    --primary-color: #3498db;
-    --secondary-color: #2ecc71;
-    --background-color: #ecf0f1;
-    --text-color: #2c3e50;
-    --modal-background: rgba(0, 0, 0, 0.7);
-    --font-family: 'Arial', sans-serif;
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    min-height: 100px;
+}
+
+.event-item {
+    background-color: white;
+    padding: 1.5rem;
+    border-left: 5px solid #3498db;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.event-item h3 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+}
+
+.event-item p {
+    margin: 0.5rem 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+.event-item .date {
+    color: #2980b9;
+    font-weight: bold;
+}
+
+.event-item.importance-key {
+    border-left-color: #e74c3c;
+}
+
+.event-item.importance-major {
+    border-left-color: #f39c12;
+}
+
+.event-item.importance-all {
+    border-left-color: #27ae60;
+}
+
+.event-item button {
+    background-color: #e74c3c;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.event-item button:hover {
+    background-color: #c0392b;
+}
+
+#addEventBtn {
+    background-color: #3498db;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+#addEventBtn:hover {
+    background-color: #2980b9;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-content h2 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+#eventForm label {
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 600;
+}
+
+#eventForm input,
+#eventForm textarea,
+#eventForm select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+#eventForm input:focus,
+#eventForm textarea:focus,
+#eventForm select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+#eventForm button {
+    width: 100%;
+    margin-top: 1.5rem;
+    background-color: #27ae60;
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+#eventForm button:hover {
+    background-color: #229954;
 }
 
 body {
-    font-family: var(--font-family);
-    background-color: var(--background-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-}
-
-.timeline {
-    position: relative;
-    max-width: 1200px;
+    font-family: Arial, sans-serif;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 2rem;
+    background-color: #ecf0f1;
 }
 
-.timeline-item {
-    position: relative;
-    padding: 20px;
-    border-bottom: 1px solid #ccc;
-}
-
-.timeline-item::before {
-    content: "";
-    position: absolute;
-    left: -20px;
-    top: 20px;
-    height: 8px;
-    width: 8px;
-    background-color: var(--primary-color);
-    border-radius: 50%;
-}
-
-.timestamp {
-    font-size: 14px;
-    color: #bdc3c7;
-}
-
-.event-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--modal-background);
-    padding: 20px;
-    border-radius: 8px;
-    z-index: 1000;
-}
-
-.close-modal {
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 20px;
-}
-
-button {
-    background-color: var(--secondary-color);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-@media (max-width: 768px) {
-    .timeline {
-        padding: 10px;
-    }
-    .timeline-item {
-        padding: 15px;
-    }
-    button {
-        width: 100%;
-    }
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 2rem;
 }
