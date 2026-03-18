@@ -8,10 +8,18 @@
 </head>
 <body>
     <h1>Editable Timeline</h1>
-    <div id="timeline" class="timeline">
-        <!-- Events will be dynamically inserted here -->
+    
+    <div class="zoom-controls">
+        <button id="zoomOutBtn">Zoom Out (Key Events)</button>
+        <button id="zoomMidBtn">Zoom Mid (Key + Major)</button>
+        <button id="zoomInBtn">Zoom In (All Events)</button>
     </div>
-    <button id="addEventBtn">Add Event</button>
+    
+    <div id="timeline" class="timeline-line">
+        <!-- Timeline events will be rendered here as dots on a line -->
+    </div>
+    
+    <button id="addEventBtn" class="add-event-btn">+ Add Event</button>
 
     <div id="eventModal" class="modal">
         <div class="modal-content">
