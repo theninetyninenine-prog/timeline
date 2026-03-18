@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Editable Timeline</h1>
-    <div class="timeline">
+    <div id="timeline" class="timeline">
         <!-- Events will be dynamically inserted here -->
     </div>
     <button id="addEventBtn">Add Event</button>
@@ -20,8 +20,21 @@
             <form id="eventForm">
                 <label for="eventTitle">Event Title:</label>
                 <input type="text" id="eventTitle" name="eventTitle" required>
+                
                 <label for="eventDate">Event Date:</label>
-                <input type="datetime-local" id="eventDate" name="eventDate" required>
+                <input type="date" id="eventDate" name="eventDate" required>
+                
+                <label for="eventDescription">Event Description:</label>
+                <textarea id="eventDescription" name="eventDescription" rows="4" required></textarea>
+                
+                <label for="eventImportance">Event Importance:</label>
+                <select id="eventImportance" name="eventImportance" required>
+                    <option value="">Select Importance</option>
+                    <option value="key">Key</option>
+                    <option value="major">Major</option>
+                    <option value="all">All</option>
+                </select>
+                
                 <button type="submit">Save Event</button>
             </form>
         </div>
