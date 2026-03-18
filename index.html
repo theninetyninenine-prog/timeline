@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Editable Timeline</title>
+</head>
+<body>
+    <h1>Editable Timeline</h1>
+    <div class="timeline">
+        <!-- Events will be dynamically inserted here -->
+    </div>
+    <button id="addEventBtn">Add Event</button>
+
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add/Edit Event</h2>
+            <form id="eventForm">
+                <label for="eventTitle">Event Title:</label>
+                <input type="text" id="eventTitle" name="eventTitle" required>
+                <label for="eventDate">Event Date:</label>
+                <input type="datetime-local" id="eventDate" name="eventDate" required>
+                <button type="submit">Save Event</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="timeline.js"></script>
+</body>
+</html>
