@@ -1,79 +1,114 @@
-.timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    min-height: 100px;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.event-item {
-    background-color: white;
-    padding: 1.5rem;
-    border-left: 5px solid #3498db;
-    border-radius: 5px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #ecf0f1;
 }
 
-.event-item h3 {
-    margin: 0 0 1rem 0;
+h1 {
     color: #2c3e50;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-.event-item p {
-    margin: 0.5rem 0;
-    color: #555;
-    line-height: 1.5;
+/* Zoom Controls */
+.zoom-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
 }
 
-.event-item .date {
-    color: #2980b9;
+.zoom-controls button {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #3498db;
+    background-color: white;
+    color: #3498db;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.zoom-controls button:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+.zoom-controls button.active {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Timeline */
+.timeline-line {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+.timeline-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.timeline-dot {
+    cursor: pointer;
+    transition: r 0.2s;
+}
+
+.timeline-label {
+    font-size: 12px;
+    fill: #2c3e50;
+    cursor: pointer;
+    transition: fill 0.2s;
+}
+
+.timeline-label:hover {
+    fill: #3498db;
     font-weight: bold;
 }
 
-.event-item.importance-key {
-    border-left-color: #e74c3c;
+.no-events {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
 }
 
-.event-item.importance-major {
-    border-left-color: #f39c12;
-}
-
-.event-item.importance-all {
-    border-left-color: #27ae60;
-}
-
-.event-item button {
-    background-color: #e74c3c;
-    color: white;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 1rem;
-}
-
-.event-item button:hover {
-    background-color: #c0392b;
-}
-
-#addEventBtn {
-    background-color: #3498db;
-    color: white;
+/* Add Event Button */
+.add-event-btn {
+    display: block;
+    margin: 0 auto 2rem;
     padding: 0.75rem 1.5rem;
+    background-color: #27ae60;
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 1rem;
-    margin-bottom: 2rem;
+    font-weight: bold;
+    transition: background-color 0.3s;
 }
 
-#addEventBtn:hover {
-    background-color: #2980b9;
+.add-event-btn:hover {
+    background-color: #229954;
 }
 
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -101,6 +136,7 @@
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    transition: color 0.3s;
 }
 
 .close:hover {
@@ -112,6 +148,7 @@
     margin-top: 0;
 }
 
+/* Form */
 #eventForm label {
     display: block;
     margin-top: 1rem;
@@ -151,22 +188,111 @@
     cursor: pointer;
     font-size: 1rem;
     font-weight: bold;
+    transition: background-color 0.3s;
 }
 
 #eventForm button:hover {
     background-color: #229954;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2rem;
-    background-color: #ecf0f1;
+/* Event Details Popup */
+.event-details-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
 }
 
-h1 {
+.event-details-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.event-details-card h3 {
     color: #2c3e50;
-    text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+}
+
+.event-details-card p {
+    margin-bottom: 0.75rem;
+    color: #555;
+    line-height: 1.6;
+}
+
+.importance-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+.importance-key {
+    background-color: #e74c3c;
+}
+
+.importance-major {
+    background-color: #f39c12;
+}
+
+.importance-all {
+    background-color: #27ae60;
+}
+
+.event-details-card button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.event-details-card button:first-of-type {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.event-details-card button:first-of-type:hover {
+    background-color: #c0392b;
+}
+
+.event-details-card button.close-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+.event-details-card button.close-btn:hover {
+    background-color: #2980b9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .zoom-controls {
+        flex-direction: column;
+    }
+    
+    .zoom-controls button {
+        width: 100%;
+    }
+    
+    .timeline-line {
+        height: 250px;
+    }
 }
