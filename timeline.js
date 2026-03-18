@@ -23,21 +23,36 @@ const timeline = {
         const closeBtn = document.querySelector('.close');
         const form = document.getElementById('eventForm');
         
-        addBtn.onclick = () => modal.style.display = 'block';
-        closeBtn.onclick = () => modal.style.display = 'none';
+        addBtn.onclick = () => {
+            modal.style.display = 'block';
+        };
+        
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+        
         window.onclick = (e) => {
-            if (e.target === modal) modal.style.display = 'none';
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
         };
         
         form.onsubmit = (e) => {
             e.preventDefault();
+            
+            const title = document.getElementById('eventTitle').value;
+            const date = document.getElementById('eventDate').value;
+            const description = document.getElementById('eventDescription').value;
+            const importance = document.getElementById('eventImportance').value;
+            
             this.addEvent({
-                title: document.getElementById('eventTitle').value,
-                date: document.getElementById('eventDate').value,
-                description: document.getElementById('eventDescription').value,
-                importance: document.getElementById('eventImportance').value,
-                id: Date.now()
+                id: Date.now(),
+                title: title,
+                date: date,
+                description: description,
+                importance: importance
             });
+            
             form.reset();
             modal.style.display = 'none';
         };
@@ -59,14 +74,19 @@ const timeline = {
         const container = document.querySelector('.timeline');
         container.innerHTML = '';
         
+        if (this.events.length === 0) {
+            container.innerHTML = '<p style="padding: 1rem; text-align: center; color: #999;">No events yet. Click "Add Event" to create one!</p>';
+            return;
+        }
+        
         this.events.forEach(event => {
             const div = document.createElement('div');
             div.className = `event-item importance-${event.importance}`;
             div.innerHTML = `
                 <h3>${event.title}</h3>
-                <p class="date">${event.date}</p>
-                <p class="description">${event.description}</p>
-                <p class="importance">Level: ${event.importance}</p>
+                <p class="date"><strong>Date:</strong> ${event.date}</p>
+                <p class="description"><strong>Description:</strong> ${event.description}</p>
+                <p class="importance"><strong>Level:</strong> ${event.importance}</p>
                 <button onclick="timeline.deleteEvent(${event.id})">Delete</button>
             `;
             container.appendChild(div);
@@ -74,5 +94,4 @@ const timeline = {
     }
 };
 
-// Initialize when page loads
 document.addEventListener('DOMContentLoaded', () => timeline.init());
