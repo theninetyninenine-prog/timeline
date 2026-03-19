@@ -1,7 +1,7 @@
 // Timeline functionality with mouse wheel zoom
 const timeline = {
     events: [],
-    scale: 100,
+    scale: 50,  // Changed from 100 to 50 so it starts at decade view
     
     init() {
         this.loadEvents();
@@ -27,15 +27,15 @@ const timeline = {
         const timelineContainer = document.getElementById('timeline');
         
         // Mouse wheel zoom
-        timelineContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            if (e.deltaY < 0) {
-                this.scale = Math.min(this.scale + 100, 50000);
-            } else {
-                this.scale = Math.max(this.scale - 100, 100);
-            }
-            this.renderTimeline();
-        }, { passive: false });
+timelineContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+        this.scale = Math.min(this.scale + 50, 50000);
+    } else {
+        this.scale = Math.max(this.scale - 50, 50);  // Changed from 100 to 50
+    }
+    this.renderTimeline();
+}, { passive: false });
         
         addBtn.addEventListener('click', () => {
             modal.style.display = 'block';
@@ -100,12 +100,12 @@ const timeline = {
         this.renderTimeline();
     },
     
-    getZoomLevel() {
-        if (this.scale < 500) return 'decade';
-        if (this.scale < 2000) return 'year';
-        if (this.scale < 5000) return 'month';
-        return 'day';
-    },
+   getZoomLevel() {
+    if (this.scale < 300) return 'decade';
+    if (this.scale < 1500) return 'year';
+    if (this.scale < 4000) return 'month';
+    return 'day';
+}
     
     formatDateLabel(dateString) {
         const date = new Date(dateString);
