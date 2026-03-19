@@ -52,7 +52,7 @@ h1 {
 .timeline-line {
     position: relative;
     width: 100%;
-    height: 200px;
+    height: 300px;
     background-color: white;
     border-radius: 8px;
     padding: 1rem;
@@ -71,14 +71,32 @@ h1 {
     transition: r 0.2s;
 }
 
-.timeline-label {
-    font-size: 12px;
-    fill: #2c3e50;
-    cursor: pointer;
-    transition: fill 0.2s;
+.timeline-dot:hover {
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
 }
 
-.timeline-label:hover {
+.timeline-title {
+    font-size: 13px;
+    fill: #2c3e50;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: normal;
+}
+
+.timeline-title:hover {
+    fill: #3498db;
+    font-weight: bold;
+}
+
+.timeline-year {
+    font-size: 12px;
+    fill: #7f8c8d;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: normal;
+}
+
+.timeline-year:hover {
     fill: #3498db;
     font-weight: bold;
 }
@@ -293,6 +311,14 @@ h1 {
     }
     
     .timeline-line {
-        height: 250px;
+        height: 300px;
+    }
+    
+    .timeline-title {
+        font-size: 11px;
+    }
+    
+    .timeline-year {
+        font-size: 10px;
     }
 }
