@@ -1,342 +1,142 @@
-class InteractiveTimeline {
-    constructor() {
-        this.events = [];
-        this.currentZoomLevel = 'all';
-        this.init();
-    }
-
-    init() {
-        this.loadEvents();
-        this.attachEventListeners();
-        this.render();
-    }
-
-    loadEvents() {
-        const stored = localStorage.getItem('timeline-events');
-        this.events = stored ? JSON.parse(stored) : [];
-        this.events.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-
-    saveEvents() {
-        localStorage.setItem('timeline-events', JSON.stringify(this.events));
-    }
-
-    attachEventListeners() {
-     const scroller = document.querySelector('.timeline-scroller');
-
-scroller.addEventListener('wheel', (e) => {
-    if (e.ctrlKey) { // pinch gesture
-        e.preventDefault();
-
-        if (e.deltaY < 0) {
-            this.zoomIn();
-        } else {
-            this.zoomOut();
-        }
-    }
-}, { passive: false });
-    }
-
-    openModal() {
-        document.getElementById('event-modal').style.display = 'block';
-        document.getElementById('event-date').focus();
-    }
-
-    closeModal() {
-        document.getElementById('event-modal').style.display = 'none';
-        document.getElementById('event-form').reset();
-    }
-
-    handleAddEvent(e) {
-        e.preventDefault();
-
-        const event = {
-            id: Date.now(),
-            date: document.getElementById('event-date').value,
-            title: document.getElementById('event-title').value,
-            description: document.getElementById('event-description').value,
-            importance: document.getElementById('event-importance').value,
-        };
-
-        this.events.push(event);
-        this.events.sort((a, b) => new Date(a.date) - new Date(b.date));
-        this.saveEvents();
-        this.closeModal();
-        this.render();
-    }
-
-    deleteEvent(id) {
-        this.events = this.events.filter(e => e.id !== id);
-        this.saveEvents();
-        this.render();
-    }
-
-   zoomIn() {
-    if (this.currentZoomIndex < this.zoomLevels.length - 1) {
-        this.currentZoomIndex++;
-        this.setZoomLevel(this.zoomLevels[this.currentZoomIndex]);
-    }
-}
-
-zoomOut() {
-    if (this.currentZoomIndex > 0) {
-        this.currentZoomIndex--;
-        this.setZoomLevel(this.zoomLevels[this.currentZoomIndex]);
-    }
-}
-    }
-
-    shouldShowEvent(event) {
-        if (this.currentZoomLevel === 'all') return true;
-        if (this.currentZoomLevel === 'key') return event.importance === 'key';
-        return event.importance === this.currentZoomLevel;
-    }
-
-    getVisibleEvents() {
-        return this.events.filter(event => this.shouldShowEvent(event));
-    }
-
-    render() {
-        const container = document.getElementById('events-container');
-        container.innerHTML = '';
-
-        if (this.events.length === 0) {
-            container.innerHTML = '<div style="text-align: center; width: 100%; color: #6b7280; padding: 2rem;">No events yet. Click "+ Add Event" to get started!</div>';
-            this.drawTimeline([]);
-            return;
-        }
-
-        this.events.forEach(event => {
-            const eventEl = document.createElement('div');
-            eventEl.className = `event importance-${event.importance}`;
-            if (!this.shouldShowEvent(event)) {
-                eventEl.classList.add('hidden');
-            }
-
-            const dateObj = new Date(event.date);
-            const formattedDate = dateObj.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-
-            eventEl.innerHTML = `
-                <div class="event-marker"></div>
-                <div class="event-content">
-                    <div class="event-date">${formattedDate}</div>
-                    <div class="event-title">${this.escapeHtml(event.title)}</div>
-                    ${event.description ? `<div class="event-description">${this.escapeHtml(event.description)}</div>` : ''}
-                    <button class="event-delete" data-id="${event.id}" title="Delete event">×</button>
-                </div>
-            `;
-
-            eventEl.querySelector('.event-delete').addEventListener('click', () => this.deleteEvent(event.id));
-            container.appendChild(eventEl);
-        });
-
-        this.drawTimeline(this.getVisibleEvents());
-    }
-
-    drawTimeline(visibleEvents) {
-        const svg = document.getElementById('timeline-svg');
-        svg.innerHTML = '';
-
-        if (visibleEvents.length === 0) return;
-
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const line = document.createElementNS(svgNS, 'line');
-        line.setAttribute('x1', '0');
-        line.setAttribute('y1', '60');
-        line.setAttribute('x2', '100%');
-        line.setAttribute('y2', '60');
-        line.setAttribute('class', 'timeline-line');
-        svg.appendChild(line);
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Initialize timeline when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    new InteractiveTimeline();
-});
-    }
-
-    init() {
-        this.loadEvents();
-        this.attachEventListeners();
-        this.render();
-    }
-
-    loadEvents() {
-        const stored = localStorage.getItem('timeline-events');
-        this.events = stored ? JSON.parse(stored) : [];
-        this.events.sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-
-    saveEvents() {
-        localStorage.setItem('timeline-events', JSON.stringify(this.events));
-    }
-
-    attachEventListeners() {
-        document.getElementById('add-event-btn').addEventListener('click', () => this.openModal());
-        document.getElementById('event-form').addEventListener('submit', (e) => this.handleAddEvent(e));
-        document.querySelector('.close').addEventListener('click', () => this.closeModal());
-
-        document.getElementById('zoom-out-btn').addEventListener('click', () => this.setZoomLevel('key'));
-        document.getElementById('zoom-in-btn').addEventListener('click', () => this.setZoomLevel('all'));
-
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('event-modal');
-            if (e.target === modal) {
-                this.closeModal();
-            }
-        });
-    }
-
-    openModal() {
-        document.getElementById('event-modal').style.display = 'block';
-        document.getElementById('event-date').focus();
-    }
-
-    closeModal() {
-        document.getElementById('event-modal').style.display = 'none';
-        document.getElementById('event-form').reset();
-    }
-
-    handleAddEvent(e) {
-        e.preventDefault();
-
-        const event = {
-            id: Date.now(),
-            date: document.getElementById('event-date').value,
-            title: document.getElementById('event-title').value,
-            description: document.getElementById('event-description').value,
-            importance: document.getElementById('event-importance').value,
-        };
-
-        this.events.push(event);
-        this.events.sort((a, b) => new Date(a.date) - new Date(b.date));
-        this.saveEvents();
-        this.closeModal();
-        this.render();
-    }
-
-    deleteEvent(id) {
-        this.events = this.events.filter(e => e.id !== id);
-        this.saveEvents();
-        this.render();
-    }
-
-    setZoomLevel(level) {
-        this.currentZoomLevel = level;
-        document.getElementById('zoom-out-btn').classList.toggle('active', level === 'key');
-        document.getElementById('zoom-in-btn').classList.toggle('active', level === 'all');
-        this.render();
-    }
-
-    shouldShowEvent(event) {
-        if (this.currentZoomLevel === 'all') return true;
-        if (this.currentZoomLevel === 'key') return event.importance === 'key';
-        return event.importance === this.currentZoomLevel;
-    }
-
-    getVisibleEvents() {
-        return this.events.filter(event => this.shouldShowEvent(event));
-    }
-
-render() {
-    const container = document.getElementById('events-container');
-    const svg = document.getElementById('timeline-svg');
-
+renderTimeline() {
+    const container = document.getElementById('timeline');
     container.innerHTML = '';
-    svg.innerHTML = '';
-
-    if (this.events.length === 0) {
-        container.innerHTML = '<div style="text-align:center;width:100%">No events yet</div>';
+    
+    const visibleEvents = this.getVisibleEvents();
+    
+    if (visibleEvents.length === 0) {
+        container.innerHTML = '<p class="no-events">No events at this zoom level. Add events or zoom in.</p>';
         return;
     }
-
-    const visibleEvents = this.getVisibleEvents();
-
-    const minDate = new Date(this.events[0].date);
-    const maxDate = new Date(this.events[this.events.length - 1].date);
-    const totalTime = maxDate - minDate;
-
-    const timelineWidth = this.getTimelineWidth();
-
-    container.style.position = 'relative';
-    container.style.width = timelineWidth + 'px';
-    svg.style.width = timelineWidth + 'px';
-
-    visibleEvents.forEach(event => {
-        const eventEl = document.createElement('div');
-        eventEl.className = `event importance-${event.importance}`;
-
-        const eventTime = new Date(event.date) - minDate;
-        const position = eventTime / totalTime;
-
-        eventEl.style.position = 'absolute';
-        eventEl.style.left = `${position * timelineWidth}px`;
-        eventEl.style.top = '0';
-
-        const dateObj = new Date(event.date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: this.currentZoomLevel === 'key' ? undefined : 'short',
-            day: this.currentZoomLevel === 'all' ? 'numeric' : undefined
-        });
-
-        eventEl.innerHTML = `
-            <div class="event-marker"></div>
-            <div class="event-content">
-                <div class="event-date">${formattedDate}</div>
-                <div class="event-title">${this.escapeHtml(event.title)}</div>
-                ${event.description ? `<div class="event-description">${this.escapeHtml(event.description)}</div>` : ''}
-                <button class="event-delete" data-id="${event.id}">×</button>
-            </div>
-        `;
-
-        eventEl.querySelector('.event-delete')
-            .addEventListener('click', () => this.deleteEvent(event.id));
-
-        container.appendChild(eventEl);
-    });
-
-    this.drawTimeline(timelineWidth);
-}
-  drawTimeline(width) {
-    const svg = document.getElementById('timeline-svg');
-    svg.innerHTML = '';
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-
-    const line = document.createElementNS(svgNS, 'line');
-    line.setAttribute('x1', '0');
-    line.setAttribute('y1', '60');
-    line.setAttribute('x2', width);
-    line.setAttribute('y2', '60');
-    line.setAttribute('class', 'timeline-line');
-
+    
+    // Create a wrapper div for horizontal scrolling
+    const wrapper = document.createElement('div');
+    wrapper.className = 'timeline-wrapper';
+    
+    // Create SVG for the timeline line
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'timeline-svg');
+    
+    // Keep fixed dimensions - don't scale with zoom
+    const svgWidth = 100 + (visibleEvents.length * this.scale);
+    const svgHeight = 300;
+    
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    
+    // Draw horizontal line
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', '50');
+    line.setAttribute('y1', '150');
+    line.setAttribute('x2', svgWidth - 50);
+    line.setAttribute('y2', '150');
+    line.setAttribute('stroke', '#3498db');
+    line.setAttribute('stroke-width', '3');
     svg.appendChild(line);
-}
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Initialize timeline when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    new InteractiveTimeline();
-});
-getTimelineWidth() {
-    if (this.currentZoomLevel === 'key') return this.baseWidth;
-    if (this.currentZoomLevel === 'major') return this.baseWidth * 3;
-    if (this.currentZoomLevel === 'all') return this.baseWidth * 8;
+    
+    // Find min and max dates for time scaling
+    const minDate = new Date(visibleEvents[0].date);
+    const maxDate = new Date(visibleEvents[visibleEvents.length - 1].date);
+    const timeRange = maxDate - minDate;
+    
+    // Calculate spacing between events based on zoom
+    const eventSpacing = this.scale;
+    
+    // Draw dots and labels
+    visibleEvents.forEach((event, index) => {
+        const eventDate = new Date(event.date);
+        
+        // Calculate x position based on date and time range
+        let x;
+        if (timeRange === 0) {
+            // If all events are on same date, space them out evenly
+            x = 100 + (index * eventSpacing);
+        } else {
+            // Distribute along timeline based on actual date
+            const positionRatio = (eventDate - minDate) / timeRange;
+            x = 50 + (positionRatio * (svgWidth - 100));
+        }
+        
+        // Determine dot color and size based on importance
+        let dotColor, dotRadius;
+        if (event.importance === 'key') {
+            dotColor = '#e74c3c';
+            dotRadius = 8;
+        } else if (event.importance === 'major') {
+            dotColor = '#f39c12';
+            dotRadius = 6;
+        } else {
+            dotColor = '#27ae60';
+            dotRadius = 4;
+        }
+        
+        // Draw dot
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', '150');
+        circle.setAttribute('r', dotRadius);
+        circle.setAttribute('fill', dotColor);
+        circle.setAttribute('stroke', 'white');
+        circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('class', 'timeline-dot');
+        circle.setAttribute('data-event-id', event.id);
+        svg.appendChild(circle);
+        
+        // Get year, month, day from date
+        const year = this.getYearFromDate(event.date);
+        const month = this.getMonthFromDate(event.date);
+        const day = this.getDayFromDate(event.date);
+        
+        // Build label based on zoom level
+        let labelLines = [];
+        labelLines.push(event.title);
+        
+        if (this.zoomLevel === 0) {
+            labelLines.push(year);
+        } else if (this.zoomLevel === 1) {
+            labelLines.push(year);
+        } else if (this.zoomLevel === 2) {
+            labelLines.push(`${month} ${year}`);
+        } else {
+            labelLines.push(`${month} ${day}, ${year}`);
+        }
+        
+        // Add text labels above and below dot
+        labelLines.forEach((line, lineIndex) => {
+            const yOffset = lineIndex === 0 ? -30 : -10;
+            
+            const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            titleText.setAttribute('x', x);
+            titleText.setAttribute('y', 150 + yOffset - (lineIndex * 18));
+            titleText.setAttribute('text-anchor', 'middle');
+            titleText.setAttribute('class', 'timeline-label');
+            titleText.setAttribute('font-size', '12');
+            titleText.setAttribute('white-space', 'nowrap');
+            titleText.textContent = line;
+            svg.appendChild(titleText);
+            
+            titleText.addEventListener('click', () => this.showEventDetails(event));
+            titleText.addEventListener('mouseover', () => {
+                circle.setAttribute('r', dotRadius + 3);
+                titleText.setAttribute('font-weight', 'bold');
+            });
+            titleText.addEventListener('mouseout', () => {
+                circle.setAttribute('r', dotRadius);
+                titleText.setAttribute('font-weight', 'normal');
+            });
+        });
+        
+        // Add hover effect and click to show details
+        circle.addEventListener('click', () => this.showEventDetails(event));
+        circle.addEventListener('mouseover', () => {
+            circle.setAttribute('r', dotRadius + 3);
+        });
+        circle.addEventListener('mouseout', () => {
+            circle.setAttribute('r', dotRadius);
+        });
+    });
+    
+    wrapper.appendChild(svg);
+    container.appendChild(wrapper);
 }
