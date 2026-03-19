@@ -73,11 +73,16 @@ const timeline = {
     },
     
     getVisibleEvents() {
-        if (this.scale < 500) {
+        const zoomLevel = this.getZoomLevel();
+        
+        if (zoomLevel === 'decade') {
+            // Only show key events at decade level
             return this.events.filter(e => e.importance === 'key');
-        } else if (this.scale < 2000) {
+        } else if (zoomLevel === 'year') {
+            // Show key and major events at year level
             return this.events.filter(e => e.importance === 'key' || e.importance === 'major');
         } else {
+            // Show all events at month/day level
             return this.events;
         }
     },
@@ -96,8 +101,9 @@ const timeline = {
     },
     
     getZoomLevel() {
-        if (this.scale < 500) return 'year';
-        if (this.scale < 3000) return 'month';
+        if (this.scale < 500) return 'decade';
+        if (this.scale < 2000) return 'year';
+        if (this.scale < 5000) return 'month';
         return 'day';
     },
     
@@ -106,9 +112,12 @@ const timeline = {
         const year = date.getFullYear();
         const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
         const day = date.getDate();
+        const decade = Math.floor(year / 10) * 10;
         
         const zoomLevel = this.getZoomLevel();
-        if (zoomLevel === 'year') {
+        if (zoomLevel === 'decade') {
+            return `${decade}s`;
+        } else if (zoomLevel === 'year') {
             return year;
         } else if (zoomLevel === 'month') {
             return `${month} ${year}`;
@@ -118,10 +127,6 @@ const timeline = {
     },
     
     calculatePixelsPerDay() {
-        // Scale determines pixels per day
-        // At scale 100, 1 pixel per day
-        // At scale 1000, 10 pixels per day
-        // At scale 50000, 500 pixels per day
         return this.scale / 100;
     },
     
@@ -168,7 +173,7 @@ const timeline = {
         line.setAttribute('stroke-width', '3');
         svg.appendChild(line);
         
-        // Draw tick marks and year/month labels
+        // Draw tick marks and labels based on zoom level
         this.drawTimeMarkers(svg, startDate, endDate, totalWidth, pixelsPerDay);
         
         // Track y positions to prevent overlap
@@ -298,11 +303,43 @@ const timeline = {
         const zoomLevel = this.getZoomLevel();
         const totalTimeRange = endDate - startDate;
         
-        if (zoomLevel === 'year') {
+        if (zoomLevel === 'decade') {
+            // Draw decade markers (1960s, 1970s, etc.)
+            let currentYear = Math.floor(startDate.getFullYear() / 10) * 10;
+            while (currentYear < endDate.getFullYear()) {
+                const decadeStart = new Date(currentYear, 0, 1);
+                const positionRatio = (decadeStart - startDate) / totalTimeRange;
+                const x = 20 + (positionRatio * (totalWidth - 40));
+                
+                // Tick mark
+                const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tick.setAttribute('x1', x);
+                tick.setAttribute('y1', '190');
+                tick.setAttribute('x2', x);
+                tick.setAttribute('y2', '210');
+                tick.setAttribute('stroke', '#3498db');
+                tick.setAttribute('stroke-width', '2');
+                svg.appendChild(tick);
+                
+                // Decade label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x);
+                label.setAttribute('y', '225');
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('font-size', '12');
+                label.setAttribute('font-weight', 'bold');
+                label.textContent = `${currentYear}s`;
+                svg.appendChild(label);
+                
+                currentYear += 10;
+            }
+        } else if (zoomLevel === 'year') {
             // Draw year markers
             let currentDate = new Date(startDate);
+            currentDate.setMonth(0);
+            currentDate.setDate(1);
+            
             while (currentDate < endDate) {
-                const nextYear = new Date(currentDate.getFullYear() + 1, 0, 1);
                 const positionRatio = (currentDate - startDate) / totalTimeRange;
                 const x = 20 + (positionRatio * (totalWidth - 40));
                 
@@ -325,11 +362,13 @@ const timeline = {
                 label.textContent = currentDate.getFullYear();
                 svg.appendChild(label);
                 
-                currentDate = nextYear;
+                currentDate.setFullYear(currentDate.getFullYear() + 1);
             }
         } else if (zoomLevel === 'month') {
             // Draw month markers
             let currentDate = new Date(startDate);
+            currentDate.setDate(1);
+            
             while (currentDate < endDate) {
                 const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
                 const positionRatio = (currentDate - startDate) / totalTimeRange;
