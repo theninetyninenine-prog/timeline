@@ -106,6 +106,10 @@ const timeline = {
         this.renderTimeline();
     },
     
+    getYearFromDate(dateString) {
+        return new Date(dateString).getFullYear();
+    },
+    
     renderTimeline() {
         const container = document.getElementById('timeline');
         container.innerHTML = '';
@@ -122,14 +126,14 @@ const timeline = {
         svg.setAttribute('class', 'timeline-svg');
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
-        svg.setAttribute('viewBox', '0 0 1000 200');
+        svg.setAttribute('viewBox', '0 0 1000 300');
         
         // Draw horizontal line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', '50');
-        line.setAttribute('y1', '100');
+        line.setAttribute('y1', '150');
         line.setAttribute('x2', '950');
-        line.setAttribute('y2', '100');
+        line.setAttribute('y2', '150');
         line.setAttribute('stroke', '#3498db');
         line.setAttribute('stroke-width', '3');
         svg.appendChild(line);
@@ -157,7 +161,7 @@ const timeline = {
             // Draw dot
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', x);
-            circle.setAttribute('cy', '100');
+            circle.setAttribute('cy', '150');
             circle.setAttribute('r', dotRadius);
             circle.setAttribute('fill', dotColor);
             circle.setAttribute('stroke', 'white');
@@ -166,26 +170,66 @@ const timeline = {
             circle.setAttribute('data-event-id', event.id);
             svg.appendChild(circle);
             
-            // Add text label below dot
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', x);
-            text.setAttribute('y', '140');
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('class', 'timeline-label');
-            text.setAttribute('data-event-id', event.id);
-            text.textContent = event.title;
-            svg.appendChild(text);
+            // Get year from date
+            const year = this.getYearFromDate(event.date);
+            
+            // Add title text above dot
+            const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            titleText.setAttribute('x', x);
+            titleText.setAttribute('y', '130');
+            titleText.setAttribute('text-anchor', 'middle');
+            titleText.setAttribute('class', 'timeline-title');
+            titleText.setAttribute('data-event-id', event.id);
+            titleText.textContent = event.title;
+            svg.appendChild(titleText);
+            
+            // Add year text below dot
+            const yearText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            yearText.setAttribute('x', x);
+            yearText.setAttribute('y', '180');
+            yearText.setAttribute('text-anchor', 'middle');
+            yearText.setAttribute('class', 'timeline-year');
+            yearText.setAttribute('data-event-id', event.id);
+            yearText.textContent = year;
+            svg.appendChild(yearText);
             
             // Add hover effect and click to show details
             circle.addEventListener('click', () => this.showEventDetails(event));
             circle.addEventListener('mouseover', () => {
                 circle.setAttribute('r', dotRadius + 3);
+                titleText.setAttribute('font-weight', 'bold');
+                yearText.setAttribute('font-weight', 'bold');
             });
             circle.addEventListener('mouseout', () => {
                 circle.setAttribute('r', dotRadius);
+                titleText.setAttribute('font-weight', 'normal');
+                yearText.setAttribute('font-weight', 'normal');
             });
             
-            text.addEventListener('click', () => this.showEventDetails(event));
+            titleText.addEventListener('click', () => this.showEventDetails(event));
+            yearText.addEventListener('click', () => this.showEventDetails(event));
+            
+            titleText.addEventListener('mouseover', () => {
+                circle.setAttribute('r', dotRadius + 3);
+                titleText.setAttribute('font-weight', 'bold');
+                yearText.setAttribute('font-weight', 'bold');
+            });
+            titleText.addEventListener('mouseout', () => {
+                circle.setAttribute('r', dotRadius);
+                titleText.setAttribute('font-weight', 'normal');
+                yearText.setAttribute('font-weight', 'normal');
+            });
+            
+            yearText.addEventListener('mouseover', () => {
+                circle.setAttribute('r', dotRadius + 3);
+                titleText.setAttribute('font-weight', 'bold');
+                yearText.setAttribute('font-weight', 'bold');
+            });
+            yearText.addEventListener('mouseout', () => {
+                circle.setAttribute('r', dotRadius);
+                titleText.setAttribute('font-weight', 'normal');
+                yearText.setAttribute('font-weight', 'normal');
+            });
         });
         
         container.appendChild(svg);
