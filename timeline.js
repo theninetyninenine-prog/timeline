@@ -1,7 +1,8 @@
-// Timeline functionality with zoom levels
+// Timeline functionality with mouse wheel zoom
 const timeline = {
     events: [],
-    zoomLevel: 'all', // 'key' | 'mid' | 'all'
+    zoomLevel: 0, // 0 = key only, 1 = yearly, 2 = monthly, 3 = daily
+    scale: 1, // Tracks actual zoom scale (100 to 10000+)
     
     init() {
         this.loadEvents();
@@ -25,11 +26,13 @@ const timeline = {
         const modal = document.getElementById('eventModal');
         const closeBtn = document.querySelector('.close');
         const form = document.getElementById('eventForm');
+        const timelineContainer = document.getElementById('timeline');
         
-        // Zoom buttons
-        document.getElementById('zoomOutBtn').onclick = () => this.setZoom('key');
-        document.getElementById('zoomMidBtn').onclick = () => this.setZoom('mid');
-        document.getElementById('zoomInBtn').onclick = () => this.setZoom('all');
+        // Wheel zoom
+        timelineContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            this.handleZoom(e.deltaY);
+        }, { passive: false });
         
         addBtn.onclick = () => {
             modal.style.display = 'block';
@@ -66,30 +69,51 @@ const timeline = {
         };
     },
     
-    setZoom(level) {
-        this.zoomLevel = level;
-        document.getElementById('zoomOutBtn').classList.remove('active');
-        document.getElementById('zoomMidBtn').classList.remove('active');
-        document.getElementById('zoomInBtn').classList.remove('active');
+    handleZoom(deltaY) {
+        // Zoom in with scroll up (negative deltaY), zoom out with scroll down (positive deltaY)
+        const zoomStep = 100;
+        const minScale = 100;
+        const maxScale = 50000; // Allow very detailed daily view
         
-        if (level === 'key') {
-            document.getElementById('zoomOutBtn').classList.add('active');
-        } else if (level === 'mid') {
-            document.getElementById('zoomMidBtn').classList.add('active');
+        if (deltaY < 0) {
+            this.scale = Math.min(this.scale + zoomStep, maxScale);
         } else {
-            document.getElementById('zoomInBtn').classList.add('active');
+            this.scale = Math.max(this.scale - zoomStep, minScale);
         }
         
+        // Update zoom level based on scale
+        if (this.scale < 500) {
+            this.zoomLevel = 0; // Key events only
+        } else if (this.scale < 2000) {
+            this.zoomLevel = 1; // Yearly with key + major
+        } else if (this.scale < 5000) {
+            this.zoomLevel = 2; // Monthly with all events
+        } else {
+            this.zoomLevel = 3; // Daily with all events
+        }
+        
+        this.updateZoomDisplay();
         this.renderTimeline();
     },
     
+    updateZoomDisplay() {
+        const display = document.getElementById('zoomLevelDisplay');
+        const descriptions = [
+            'Zoom Level: Key Events Only',
+            'Zoom Level: Yearly View (Key + Major Events)',
+            'Zoom Level: Monthly View (All Events)',
+            'Zoom Level: Daily View (All Events)'
+        ];
+        display.textContent = descriptions[this.zoomLevel];
+    },
+    
     getVisibleEvents() {
-        if (this.zoomLevel === 'key') {
+        if (this.zoomLevel === 0) {
             return this.events.filter(e => e.importance === 'key');
-        } else if (this.zoomLevel === 'mid') {
+        } else if (this.zoomLevel === 1) {
             return this.events.filter(e => e.importance === 'key' || e.importance === 'major');
         } else {
-            return this.events; // 'all'
+            return this.events; // All events for zoom levels 2 and 3
         }
     },
     
@@ -110,6 +134,15 @@ const timeline = {
         return new Date(dateString).getFullYear();
     },
     
+    getMonthFromDate(dateString) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[new Date(dateString).getMonth()];
+    },
+    
+    getDayFromDate(dateString) {
+        return new Date(dateString).getDate();
+    },
+    
     renderTimeline() {
         const container = document.getElementById('timeline');
         container.innerHTML = '';
@@ -117,7 +150,7 @@ const timeline = {
         const visibleEvents = this.getVisibleEvents();
         
         if (visibleEvents.length === 0) {
-            container.innerHTML = '<p class="no-events">No events at this zoom level. Add events or adjust zoom.</p>';
+            container.innerHTML = '<p class="no-events">No events at this zoom level. Add events or zoom in.</p>';
             return;
         }
         
@@ -126,24 +159,33 @@ const timeline = {
         svg.setAttribute('class', 'timeline-svg');
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
-        svg.setAttribute('viewBox', '0 0 1000 300');
+        
+        // Scale the viewBox based on zoom level
+        const viewBoxWidth = this.scale;
+        const viewBoxHeight = 300;
+        svg.setAttribute('viewBox', `0 0 ${viewBoxWidth} ${viewBoxHeight}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
         
         // Draw horizontal line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', '50');
+        line.setAttribute('x1', '0');
         line.setAttribute('y1', '150');
-        line.setAttribute('x2', '950');
+        line.setAttribute('x2', viewBoxWidth);
         line.setAttribute('y2', '150');
         line.setAttribute('stroke', '#3498db');
         line.setAttribute('stroke-width', '3');
         svg.appendChild(line);
         
-        // Calculate spacing
-        const spacing = 900 / (visibleEvents.length - 1 || 1);
+        // Find min and max dates
+        const minDate = new Date(visibleEvents[0].date);
+        const maxDate = new Date(visibleEvents[visibleEvents.length - 1].date);
+        const timeRange = maxDate - minDate;
         
         // Draw dots and labels
         visibleEvents.forEach((event, index) => {
-            const x = 50 + (index * spacing);
+            const eventDate = new Date(event.date);
+            const positionRatio = timeRange === 0 ? 0.5 : (eventDate - minDate) / timeRange;
+            const x = positionRatio * (viewBoxWidth - 50) + 25;
             
             // Determine dot color and size based on importance
             let dotColor, dotRadius;
@@ -170,65 +212,52 @@ const timeline = {
             circle.setAttribute('data-event-id', event.id);
             svg.appendChild(circle);
             
-            // Get year from date
+            // Get year, month, day from date
             const year = this.getYearFromDate(event.date);
+            const month = this.getMonthFromDate(event.date);
+            const day = this.getDayFromDate(event.date);
+            
+            // Build label based on zoom level
+            let labelText;
+            if (this.zoomLevel === 0) {
+                labelText = `${event.title}\n${year}`;
+            } else if (this.zoomLevel === 1) {
+                labelText = `${event.title}\n${year}`;
+            } else if (this.zoomLevel === 2) {
+                labelText = `${event.title}\n${month} ${year}`;
+            } else {
+                labelText = `${event.title}\n${month} ${day}, ${year}`;
+            }
             
             // Add title text above dot
-            const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            titleText.setAttribute('x', x);
-            titleText.setAttribute('y', '130');
-            titleText.setAttribute('text-anchor', 'middle');
-            titleText.setAttribute('class', 'timeline-title');
-            titleText.setAttribute('data-event-id', event.id);
-            titleText.textContent = event.title;
-            svg.appendChild(titleText);
-            
-            // Add year text below dot
-            const yearText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            yearText.setAttribute('x', x);
-            yearText.setAttribute('y', '180');
-            yearText.setAttribute('text-anchor', 'middle');
-            yearText.setAttribute('class', 'timeline-year');
-            yearText.setAttribute('data-event-id', event.id);
-            yearText.textContent = year;
-            svg.appendChild(yearText);
+            const lines = labelText.split('\n');
+            lines.forEach((line, lineIndex) => {
+                const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                titleText.setAttribute('x', x);
+                titleText.setAttribute('y', 120 - (lineIndex * 20));
+                titleText.setAttribute('text-anchor', 'middle');
+                titleText.setAttribute('class', 'timeline-label');
+                titleText.setAttribute('data-event-id', event.id);
+                titleText.setAttribute('font-size', '12');
+                titleText.textContent = line;
+                svg.appendChild(titleText);
+                
+                titleText.addEventListener('click', () => this.showEventDetails(event));
+                titleText.addEventListener('mouseover', () => {
+                    circle.setAttribute('r', dotRadius + 3);
+                });
+                titleText.addEventListener('mouseout', () => {
+                    circle.setAttribute('r', dotRadius);
+                });
+            });
             
             // Add hover effect and click to show details
             circle.addEventListener('click', () => this.showEventDetails(event));
             circle.addEventListener('mouseover', () => {
                 circle.setAttribute('r', dotRadius + 3);
-                titleText.setAttribute('font-weight', 'bold');
-                yearText.setAttribute('font-weight', 'bold');
             });
             circle.addEventListener('mouseout', () => {
                 circle.setAttribute('r', dotRadius);
-                titleText.setAttribute('font-weight', 'normal');
-                yearText.setAttribute('font-weight', 'normal');
-            });
-            
-            titleText.addEventListener('click', () => this.showEventDetails(event));
-            yearText.addEventListener('click', () => this.showEventDetails(event));
-            
-            titleText.addEventListener('mouseover', () => {
-                circle.setAttribute('r', dotRadius + 3);
-                titleText.setAttribute('font-weight', 'bold');
-                yearText.setAttribute('font-weight', 'bold');
-            });
-            titleText.addEventListener('mouseout', () => {
-                circle.setAttribute('r', dotRadius);
-                titleText.setAttribute('font-weight', 'normal');
-                yearText.setAttribute('font-weight', 'normal');
-            });
-            
-            yearText.addEventListener('mouseover', () => {
-                circle.setAttribute('r', dotRadius + 3);
-                titleText.setAttribute('font-weight', 'bold');
-                yearText.setAttribute('font-weight', 'bold');
-            });
-            yearText.addEventListener('mouseout', () => {
-                circle.setAttribute('r', dotRadius);
-                titleText.setAttribute('font-weight', 'normal');
-                yearText.setAttribute('font-weight', 'normal');
             });
         });
         
