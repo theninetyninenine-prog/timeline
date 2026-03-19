@@ -1,54 +1,14 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    background-color: #ecf0f1;
-}
-
-h1 {
-    color: #2c3e50;
+.zoom-info {
     text-align: center;
-    margin-bottom: 2rem;
-}
-
-/* Zoom Controls */
-.zoom-controls {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-
-.zoom-controls button {
-    padding: 0.75rem 1.5rem;
-    border: 2px solid #3498db;
-    background-color: white;
-    color: #3498db;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background-color: #e8f4f8;
     border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s;
+    border-left: 4px solid #3498db;
+    color: #2c3e50;
+    font-size: 0.9rem;
 }
 
-.zoom-controls button:hover {
-    background-color: #3498db;
-    color: white;
-}
-
-.zoom-controls button.active {
-    background-color: #3498db;
-    color: white;
-}
-
-/* Timeline */
 .timeline-line {
     position: relative;
     width: 100%;
@@ -59,15 +19,15 @@ h1 {
     margin-bottom: 2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .timeline-svg {
-    width: 100%;
+    display: block;
     height: 100%;
 }
 
 .timeline-dot {
-    cursor: pointer;
     transition: r 0.2s;
 }
 
@@ -75,28 +35,12 @@ h1 {
     filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
 }
 
-.timeline-title {
-    font-size: 13px;
+.timeline-label {
     fill: #2c3e50;
-    cursor: pointer;
     transition: all 0.2s;
-    font-weight: normal;
 }
 
-.timeline-title:hover {
-    fill: #3498db;
-    font-weight: bold;
-}
-
-.timeline-year {
-    font-size: 12px;
-    fill: #7f8c8d;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: normal;
-}
-
-.timeline-year:hover {
+.timeline-label:hover {
     fill: #3498db;
     font-weight: bold;
 }
@@ -105,220 +49,4 @@ h1 {
     text-align: center;
     color: #999;
     padding: 2rem;
-}
-
-/* Add Event Button */
-.add-event-btn {
-    display: block;
-    margin: 0 auto 2rem;
-    padding: 0.75rem 1.5rem;
-    background-color: #27ae60;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.add-event-btn:hover {
-    background-color: #229954;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.3s;
-}
-
-.close:hover {
-    color: #000;
-}
-
-.modal-content h2 {
-    color: #2c3e50;
-    margin-top: 0;
-}
-
-/* Form */
-#eventForm label {
-    display: block;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-    color: #333;
-    font-weight: 600;
-}
-
-#eventForm input,
-#eventForm textarea,
-#eventForm select {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: Arial, sans-serif;
-    font-size: 1rem;
-    box-sizing: border-box;
-}
-
-#eventForm input:focus,
-#eventForm textarea:focus,
-#eventForm select:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
-}
-
-#eventForm button {
-    width: 100%;
-    margin-top: 1.5rem;
-    background-color: #27ae60;
-    color: white;
-    padding: 0.75rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-#eventForm button:hover {
-    background-color: #229954;
-}
-
-/* Event Details Popup */
-.event-details-popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.event-details-card {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    position: relative;
-}
-
-.event-details-card h3 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-.event-details-card p {
-    margin-bottom: 0.75rem;
-    color: #555;
-    line-height: 1.6;
-}
-
-.importance-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-weight: bold;
-    color: white;
-}
-
-.importance-key {
-    background-color: #e74c3c;
-}
-
-.importance-major {
-    background-color: #f39c12;
-}
-
-.importance-all {
-    background-color: #27ae60;
-}
-
-.event-details-card button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    margin-right: 0.5rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.event-details-card button:first-of-type {
-    background-color: #e74c3c;
-    color: white;
-}
-
-.event-details-card button:first-of-type:hover {
-    background-color: #c0392b;
-}
-
-.event-details-card button.close-btn {
-    background-color: #3498db;
-    color: white;
-}
-
-.event-details-card button.close-btn:hover {
-    background-color: #2980b9;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    body {
-        padding: 1rem;
-    }
-    
-    .zoom-controls {
-        flex-direction: column;
-    }
-    
-    .zoom-controls button {
-        width: 100%;
-    }
-    
-    .timeline-line {
-        height: 300px;
-    }
-    
-    .timeline-title {
-        font-size: 11px;
-    }
-    
-    .timeline-year {
-        font-size: 10px;
-    }
 }
