@@ -30,9 +30,9 @@ const timeline = {
         timelineContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
             if (e.deltaY < 0) {
-                this.scale = Math.min(this.scale + 50, 5000);
+                this.scale = Math.min(this.scale + 100, 50000);
             } else {
-                this.scale = Math.max(this.scale - 50, 100);
+                this.scale = Math.max(this.scale - 100, 100);
             }
             this.renderTimeline();
         }, { passive: false });
@@ -95,21 +95,34 @@ const timeline = {
         this.renderTimeline();
     },
     
+    getZoomLevel() {
+        if (this.scale < 500) return 'year';
+        if (this.scale < 3000) return 'month';
+        return 'day';
+    },
+    
     formatDateLabel(dateString) {
         const date = new Date(dateString);
         const year = date.getFullYear();
         const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
         const day = date.getDate();
         
-        if (this.scale < 500) {
+        const zoomLevel = this.getZoomLevel();
+        if (zoomLevel === 'year') {
             return year;
-        } else if (this.scale < 2000) {
-            return year;
-        } else if (this.scale < 4000) {
+        } else if (zoomLevel === 'month') {
             return `${month} ${year}`;
         } else {
-            return `${month} ${day}, ${year}`;
+            return `${month} ${day}`;
         }
+    },
+    
+    calculatePixelsPerDay() {
+        // Scale determines pixels per day
+        // At scale 100, 1 pixel per day
+        // At scale 1000, 10 pixels per day
+        // At scale 50000, 500 pixels per day
+        return this.scale / 100;
     },
     
     renderTimeline() {
@@ -123,32 +136,77 @@ const timeline = {
             return;
         }
         
-        const totalWidth = 100 + (visibleEvents.length * this.scale);
+        // Calculate time range
+        const minDate = new Date(visibleEvents[0].date);
+        const maxDate = new Date(visibleEvents[visibleEvents.length - 1].date);
+        
+        // Add padding (10% on each side)
+        const timeRange = maxDate - minDate;
+        const padding = timeRange * 0.1;
+        const startDate = new Date(minDate.getTime() - padding);
+        const endDate = new Date(maxDate.getTime() + padding);
+        const totalTimeRange = endDate - startDate;
+        
+        // Calculate total width based on date range
+        const pixelsPerDay = this.calculatePixelsPerDay();
+        const totalDays = totalTimeRange / (1000 * 60 * 60 * 24);
+        const totalWidth = Math.max(500, totalDays * pixelsPerDay + 100);
         
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'timeline-svg');
         svg.setAttribute('width', totalWidth);
-        svg.setAttribute('height', 300);
+        svg.setAttribute('height', 400);
+        svg.setAttribute('style', 'background-color: white;');
         
-        // Draw line
+        // Draw horizontal line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', '20');
-        line.setAttribute('y1', '150');
+        line.setAttribute('y1', '200');
         line.setAttribute('x2', totalWidth - 20);
-        line.setAttribute('y2', '150');
+        line.setAttribute('y2', '200');
         line.setAttribute('stroke', '#3498db');
         line.setAttribute('stroke-width', '3');
         svg.appendChild(line);
         
-        const minDate = new Date(visibleEvents[0].date);
-        const maxDate = new Date(visibleEvents[visibleEvents.length - 1].date);
-        const timeRange = maxDate - minDate || 1;
+        // Draw tick marks and year/month labels
+        this.drawTimeMarkers(svg, startDate, endDate, totalWidth, pixelsPerDay);
         
-        visibleEvents.forEach((event) => {
+        // Track y positions to prevent overlap
+        const eventYPositions = {};
+        let nextYPosition = 100;
+        const rowHeight = 60;
+        
+        // Draw events
+        visibleEvents.forEach((event, index) => {
             const eventDate = new Date(event.date);
-            const positionRatio = (eventDate - minDate) / timeRange;
-            const x = 50 + (positionRatio * (totalWidth - 100));
+            const positionRatio = (eventDate - startDate) / totalTimeRange;
+            const x = 20 + (positionRatio * (totalWidth - 40));
             
+            // Determine y position to prevent stacking
+            const eventKey = event.date;
+            if (!eventYPositions[eventKey]) {
+                eventYPositions[eventKey] = nextYPosition;
+                nextYPosition += rowHeight;
+            }
+            const y = eventYPositions[eventKey];
+            
+            // Ensure we don't go off the bottom
+            if (y > 350) {
+                eventYPositions[eventKey] = 100;
+            }
+            
+            // Draw line from timeline to event
+            const connector = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            connector.setAttribute('x1', x);
+            connector.setAttribute('y1', '200');
+            connector.setAttribute('x2', x);
+            connector.setAttribute('y2', eventYPositions[eventKey]);
+            connector.setAttribute('stroke', '#bdc3c7');
+            connector.setAttribute('stroke-width', '1');
+            connector.setAttribute('stroke-dasharray', '5,5');
+            svg.appendChild(connector);
+            
+            // Determine dot color and size
             let dotColor, dotRadius;
             if (event.importance === 'key') {
                 dotColor = '#e74c3c';
@@ -161,10 +219,10 @@ const timeline = {
                 dotRadius = 4;
             }
             
-            // Dot
+            // Draw dot on timeline
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', x);
-            circle.setAttribute('cy', '150');
+            circle.setAttribute('cy', '200');
             circle.setAttribute('r', dotRadius);
             circle.setAttribute('fill', dotColor);
             circle.setAttribute('stroke', 'white');
@@ -173,25 +231,45 @@ const timeline = {
             circle.style.cursor = 'pointer';
             svg.appendChild(circle);
             
-            // Title
+            // Draw event box
+            const boxX = x - 40;
+            const boxY = eventYPositions[eventKey] - 35;
+            const boxWidth = 80;
+            const boxHeight = 50;
+            
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', boxX);
+            rect.setAttribute('y', boxY);
+            rect.setAttribute('width', boxWidth);
+            rect.setAttribute('height', boxHeight);
+            rect.setAttribute('fill', 'white');
+            rect.setAttribute('stroke', dotColor);
+            rect.setAttribute('stroke-width', '2');
+            rect.setAttribute('rx', '4');
+            rect.style.cursor = 'pointer';
+            svg.appendChild(rect);
+            
+            // Draw title text
             const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             titleText.setAttribute('x', x);
-            titleText.setAttribute('y', '120');
+            titleText.setAttribute('y', boxY + 15);
             titleText.setAttribute('text-anchor', 'middle');
+            titleText.setAttribute('font-size', '10');
+            titleText.setAttribute('font-weight', 'bold');
             titleText.setAttribute('class', 'timeline-label');
-            titleText.setAttribute('font-size', '12');
-            titleText.textContent = event.title;
+            titleText.setAttribute('data-event-id', event.id);
+            titleText.textContent = event.title.substring(0, 12);
             titleText.style.cursor = 'pointer';
             svg.appendChild(titleText);
             
-            // Date
+            // Draw date text
             const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             dateText.setAttribute('x', x);
-            dateText.setAttribute('y', '180');
+            dateText.setAttribute('y', boxY + 32);
             dateText.setAttribute('text-anchor', 'middle');
-            dateText.setAttribute('class', 'timeline-label');
-            dateText.setAttribute('font-size', '11');
+            dateText.setAttribute('font-size', '9');
             dateText.setAttribute('fill', '#7f8c8d');
+            dateText.setAttribute('class', 'timeline-label');
             dateText.textContent = this.formatDateLabel(event.date);
             dateText.style.cursor = 'pointer';
             svg.appendChild(dateText);
@@ -201,12 +279,121 @@ const timeline = {
             circle.addEventListener('click', showDetails);
             titleText.addEventListener('click', showDetails);
             dateText.addEventListener('click', showDetails);
+            rect.addEventListener('click', showDetails);
             
-            circle.addEventListener('mouseover', () => circle.setAttribute('r', dotRadius + 3));
-            circle.addEventListener('mouseout', () => circle.setAttribute('r', dotRadius));
+            circle.addEventListener('mouseover', () => {
+                circle.setAttribute('r', dotRadius + 3);
+                rect.setAttribute('stroke-width', '3');
+            });
+            circle.addEventListener('mouseout', () => {
+                circle.setAttribute('r', dotRadius);
+                rect.setAttribute('stroke-width', '2');
+            });
         });
         
         container.appendChild(svg);
+    },
+    
+    drawTimeMarkers(svg, startDate, endDate, totalWidth, pixelsPerDay) {
+        const zoomLevel = this.getZoomLevel();
+        const totalTimeRange = endDate - startDate;
+        
+        if (zoomLevel === 'year') {
+            // Draw year markers
+            let currentDate = new Date(startDate);
+            while (currentDate < endDate) {
+                const nextYear = new Date(currentDate.getFullYear() + 1, 0, 1);
+                const positionRatio = (currentDate - startDate) / totalTimeRange;
+                const x = 20 + (positionRatio * (totalWidth - 40));
+                
+                // Tick mark
+                const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tick.setAttribute('x1', x);
+                tick.setAttribute('y1', '190');
+                tick.setAttribute('x2', x);
+                tick.setAttribute('y2', '210');
+                tick.setAttribute('stroke', '#3498db');
+                tick.setAttribute('stroke-width', '1');
+                svg.appendChild(tick);
+                
+                // Year label
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', x);
+                label.setAttribute('y', '225');
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('font-size', '11');
+                label.textContent = currentDate.getFullYear();
+                svg.appendChild(label);
+                
+                currentDate = nextYear;
+            }
+        } else if (zoomLevel === 'month') {
+            // Draw month markers
+            let currentDate = new Date(startDate);
+            while (currentDate < endDate) {
+                const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                const positionRatio = (currentDate - startDate) / totalTimeRange;
+                const x = 20 + (positionRatio * (totalWidth - 40));
+                
+                // Tick mark
+                const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tick.setAttribute('x1', x);
+                tick.setAttribute('y1', '195');
+                tick.setAttribute('x2', x);
+                tick.setAttribute('y2', '205');
+                tick.setAttribute('stroke', '#3498db');
+                tick.setAttribute('stroke-width', '1');
+                svg.appendChild(tick);
+                
+                // Month label (every 3 months to avoid clutter)
+                if (currentDate.getMonth() % 3 === 0) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', x);
+                    label.setAttribute('y', '225');
+                    label.setAttribute('text-anchor', 'middle');
+                    label.setAttribute('font-size', '10');
+                    label.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+                    svg.appendChild(label);
+                }
+                
+                currentDate = nextMonth;
+            }
+        } else {
+            // Draw day markers
+            let currentDate = new Date(startDate);
+            while (currentDate < endDate) {
+                const nextDay = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+                const positionRatio = (currentDate - startDate) / totalTimeRange;
+                const x = 20 + (positionRatio * (totalWidth - 40));
+                
+                // Tick mark (only for Sundays and first of month)
+                if (currentDate.getDay() === 0 || currentDate.getDate() === 1) {
+                    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    tick.setAttribute('x1', x);
+                    tick.setAttribute('y1', '195');
+                    tick.setAttribute('x2', x);
+                    tick.setAttribute('y2', '205');
+                    tick.setAttribute('stroke', '#3498db');
+                    tick.setAttribute('stroke-width', '1');
+                    svg.appendChild(tick);
+                    
+                    // Label for 1st of month
+                    if (currentDate.getDate() === 1) {
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        label.setAttribute('x', x);
+                        label.setAttribute('y', '225');
+                        label.setAttribute('text-anchor', 'middle');
+                        label.setAttribute('font-size', '9');
+                        label.textContent = `${months[currentDate.getMonth()]}`;
+                        svg.appendChild(label);
+                    }
+                }
+                
+                currentDate = nextDay;
+            }
+        }
     },
     
     showEventDetails(event) {
