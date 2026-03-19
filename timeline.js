@@ -1,7 +1,7 @@
 // Timeline functionality with mouse wheel zoom
 const timeline = {
     events: [],
-    scale: 100, // Base scale for spacing (100-10000)
+    scale: 100,
     
     init() {
         this.loadEvents();
@@ -26,7 +26,7 @@ const timeline = {
         const form = document.getElementById('eventForm');
         const timelineContainer = document.getElementById('timeline');
         
-        // Wheel zoom
+        // Mouse wheel zoom
         timelineContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
             if (e.deltaY < 0) {
@@ -37,21 +37,21 @@ const timeline = {
             this.renderTimeline();
         }, { passive: false });
         
-        addBtn.onclick = () => {
+        addBtn.addEventListener('click', () => {
             modal.style.display = 'block';
-        };
+        });
         
-        closeBtn.onclick = () => {
+        closeBtn.addEventListener('click', () => {
             modal.style.display = 'none';
-        };
+        });
         
-        window.onclick = (e) => {
+        window.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.display = 'none';
             }
-        };
+        });
         
-        form.onsubmit = (e) => {
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
             
             const title = document.getElementById('eventTitle').value;
@@ -69,7 +69,7 @@ const timeline = {
             
             form.reset();
             modal.style.display = 'none';
-        };
+        });
     },
     
     getVisibleEvents() {
@@ -119,11 +119,10 @@ const timeline = {
         const visibleEvents = this.getVisibleEvents();
         
         if (visibleEvents.length === 0) {
-            container.innerHTML = '<p class="no-events">No events at this zoom level.</p>';
+            container.innerHTML = '<p class="no-events">No events at this zoom level. Add some events!</p>';
             return;
         }
         
-        // Calculate total width needed
         const totalWidth = 100 + (visibleEvents.length * this.scale);
         
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -131,7 +130,7 @@ const timeline = {
         svg.setAttribute('width', totalWidth);
         svg.setAttribute('height', 300);
         
-        // Draw horizontal line
+        // Draw line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', '20');
         line.setAttribute('y1', '150');
@@ -141,18 +140,15 @@ const timeline = {
         line.setAttribute('stroke-width', '3');
         svg.appendChild(line);
         
-        // Find min and max dates
         const minDate = new Date(visibleEvents[0].date);
         const maxDate = new Date(visibleEvents[visibleEvents.length - 1].date);
         const timeRange = maxDate - minDate || 1;
         
-        // Draw events
         visibleEvents.forEach((event) => {
             const eventDate = new Date(event.date);
             const positionRatio = (eventDate - minDate) / timeRange;
             const x = 50 + (positionRatio * (totalWidth - 100));
             
-            // Dot color and size
             let dotColor, dotRadius;
             if (event.importance === 'key') {
                 dotColor = '#e74c3c';
@@ -165,7 +161,7 @@ const timeline = {
                 dotRadius = 4;
             }
             
-            // Draw dot
+            // Dot
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', x);
             circle.setAttribute('cy', '150');
@@ -174,6 +170,7 @@ const timeline = {
             circle.setAttribute('stroke', 'white');
             circle.setAttribute('stroke-width', '2');
             circle.setAttribute('class', 'timeline-dot');
+            circle.style.cursor = 'pointer';
             svg.appendChild(circle);
             
             // Title
@@ -183,5 +180,63 @@ const timeline = {
             titleText.setAttribute('text-anchor', 'middle');
             titleText.setAttribute('class', 'timeline-label');
             titleText.setAttribute('font-size', '12');
-            titleText.text*
-
+            titleText.textContent = event.title;
+            titleText.style.cursor = 'pointer';
+            svg.appendChild(titleText);
+            
+            // Date
+            const dateText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            dateText.setAttribute('x', x);
+            dateText.setAttribute('y', '180');
+            dateText.setAttribute('text-anchor', 'middle');
+            dateText.setAttribute('class', 'timeline-label');
+            dateText.setAttribute('font-size', '11');
+            dateText.setAttribute('fill', '#7f8c8d');
+            dateText.textContent = this.formatDateLabel(event.date);
+            dateText.style.cursor = 'pointer';
+            svg.appendChild(dateText);
+            
+            // Event handlers
+            const showDetails = () => this.showEventDetails(event);
+            circle.addEventListener('click', showDetails);
+            titleText.addEventListener('click', showDetails);
+            dateText.addEventListener('click', showDetails);
+            
+            circle.addEventListener('mouseover', () => circle.setAttribute('r', dotRadius + 3));
+            circle.addEventListener('mouseout', () => circle.setAttribute('r', dotRadius));
+        });
+        
+        container.appendChild(svg);
+    },
+    
+    showEventDetails(event) {
+        const popup = document.createElement('div');
+        popup.className = 'event-details-popup';
+        popup.innerHTML = `
+            <div class="event-details-card">
+                <h3>${event.title}</h3>
+                <p><strong>Date:</strong> ${event.date}</p>
+                <p><strong>Description:</strong> ${event.description}</p>
+                <p><strong>Importance:</strong> <span class="importance-badge importance-${event.importance}">${event.importance}</span></p>
+                <button onclick="timeline.deleteEvent(${event.id})">Delete</button>
+                <button onclick="timeline.closePopup()" class="close-btn">Close</button>
+            </div>
+        `;
+        
+        const existing = document.querySelector('.event-details-popup');
+        if (existing) existing.remove();
+        
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) this.closePopup();
+        });
+        
+        document.body.appendChild(popup);
+    },
+    
+    closePopup() {
+        const popup = document.querySelector('.event-details-popup');
+        if (popup) popup.remove();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => timeline.init());
